@@ -1,0 +1,154 @@
+version: "3.8"
+
+# ============================================================================
+# TechRetail - Stack de Docker Swarm
+# ----------------------------------------------------------------------------
+# Servicios:
+#   - frontend  : nginx (3 replicas) sirve la SPA y hace proxy al backend
+#   - backend   : node:18-alpine (2 replicas) API REST minima
+#   - database  : mysql:8 (1 replica, fija en el manager por persistencia)
+#   - cache     : redis:7-alpine (1 replica)
+#   - visualizer: dashboard del cluster en :8080
+#
+# Antes de desplegar:
+#   1) docker swarm init  (en el manager)
+#   2) Unir los workers con el join token
+#   3) echo "MiPasswordSegura123" | docker secret create db_password -
+#   4) docker stack deploy -c docker-compose.yml techretail
+# ============================================================================
+
+services:
+
+  # --------------------------------------------------------------------------
+  # FRONTEND - Nginx con index.html y nginx.conf custom (via Configs)
+  # --------------------------------------------------------------------------
+  frontend:
+    image: nginx:alpine
+    ports:
+      - target: 80
+        published: 80
+        mode: ingress       # routing mesh: cualquier nodo responde en :80
+    networks:
+      - techretail_net
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/nginx.conf
+      - source: index_html
+        target: /usr/share/nginx/html/index.html
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        parallelism: 1       # actualiza una replica a la vez (rolling update)
+        delay: 10s
+        order: start-first   # arranca la nueva antes de bajar la vieja
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+
+  # --------------------------------------------------------------------------
+  # BACKEND - API Node.js minima. El codigo se inyecta via Docker Configs
+  # para no requerir build ni push a Docker Hub.
+  # --------------------------------------------------------------------------
+  backend:
+    image: node:18-alpine
+    command: ["node", "/app/server.js"]
+    networks:
+      - techretail_net
+    configs:
+      - source: backend_server
+        target: /app/server.js
+    secrets:
+      - db_password
+    environment:
+      NODE_ENV: production
+      DB_HOST: database
+      REDIS_HOST: cache
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  # --------------------------------------------------------------------------
+  # DATABASE - MySQL 8. Anclado al manager para persistencia consistente.
+  # --------------------------------------------------------------------------
+  database:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_password
+      MYSQL_DATABASE: techretail_db
+    networks:
+      - techretail_net
+    volumes:
+      - db_data:/var/lib/mysql
+    secrets:
+      - db_password
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+
+  # --------------------------------------------------------------------------
+  # CACHE - Redis 7
+  # --------------------------------------------------------------------------
+  cache:
+    image: redis:7-alpine
+    networks:
+      - techretail_net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  # --------------------------------------------------------------------------
+  # VISUALIZER - Dashboard del cluster (solo en manager por el socket Docker)
+  # --------------------------------------------------------------------------
+  visualizer:
+    image: dockersamples/visualizer:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+# ============================================================================
+networks:
+  techretail_net:
+    driver: overlay
+    attachable: true
+
+volumes:
+  db_data:
+
+# Configs: archivos NO sensibles distribuidos por Swarm a todos los nodos
+configs:
+  nginx_conf:
+    file: ./frontend/nginx.conf
+  index_html:
+    file: ./frontend/index.html
+  backend_server:
+    file: ./backend/server.js
+
+# Secrets: credenciales sensibles. Se crean fuera del compose con:
+#   echo "MiPasswordSegura123" | docker secret create db_password -
+secrets:
+  db_password:
+    external: true

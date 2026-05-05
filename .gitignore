@@ -1,0 +1,23 @@
+# Secrets reales (solo se sube el .example)
+secrets/*
+!secrets/*.example
+!secrets/.gitkeep
+
+# Capturas locales (subir solo las del entregable)
+capturas/*.tmp
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Editores
+.vscode/
+.idea/
+
+# Claude Code (memoria local, no compartir)
+.claude/
+
+# Logs
+*.log

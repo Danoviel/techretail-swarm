@@ -1,0 +1,29 @@
+# Forzar line endings LF (Linux/Unix) para archivos que corren en contenedores.
+# Sin esto, Windows convierte a CRLF y los scripts bash fallan con
+# "bad interpreter" o "syntax error" cuando se ejecutan en Linux.
+
+# Texto en general: detectar automaticamente
+* text=auto
+
+# Scripts y configs Linux - SIEMPRE LF
+*.sh        text eol=lf
+*.conf      text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+
+# Codigo y archivos web - SIEMPRE LF (consistencia entre OS)
+*.js        text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+.gitignore  text eol=lf
+.gitattributes text eol=lf
+
+# Binarios - no tocar
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.pdf       binary
+*.zip       binary

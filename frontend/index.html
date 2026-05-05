@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechRetail - Demo Docker Swarm</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 2.5rem; }
+        h1 { color: #4ec9b0; font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .subtitle { color: #888; font-size: 1.1rem; }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #4ec9b0;
+            color: #0f1419;
+            border: 0;
+            padding: 0.9rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { background: #6ee9cc; transform: translateY(-2px); }
+        button.secondary { background: #c586c0; }
+        button.secondary:hover { background: #d8a0d2; }
+        button.danger { background: #f48771; }
+        button.danger:hover { background: #ff9d8a; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat {
+            background: #1e1e1e;
+            padding: 1.2rem;
+            border-radius: 8px;
+            border-left: 4px solid #4ec9b0;
+        }
+        .stat-label { color: #888; font-size: 0.85rem; text-transform: uppercase; }
+        .stat-value { color: #4ec9b0; font-size: 1.6rem; font-weight: 700; margin-top: 0.3rem; }
+
+        .responses {
+            background: #161616;
+            border-radius: 8px;
+            padding: 1.2rem;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+        .responses h3 { color: #4ec9b0; margin-bottom: 1rem; }
+        .response {
+            background: #1e1e1e;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid #c586c0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .hostname {
+            color: #c586c0;
+            font-weight: 700;
+            background: rgba(197, 134, 192, 0.15);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+        }
+        .req-num { color: #888; font-size: 0.85rem; }
+        .ts { color: #666; font-size: 0.8rem; }
+
+        footer { text-align: center; margin-top: 2rem; color: #666; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TechRetail</h1>
+            <p class="subtitle">Demostracion de Docker Swarm - Load balancing entre replicas</p>
+        </header>
+
+        <div class="controls">
+            <button onclick="callBackend()">Llamar al backend (1 vez)</button>
+            <button class="secondary" onclick="stress(20)">Stress test (20 llamadas)</button>
+            <button class="danger" onclick="clearResponses()">Limpiar</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Llamadas totales</div>
+                <div class="stat-value" id="total-calls">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Containers vistos</div>
+                <div class="stat-value" id="unique-hosts">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Ultima latencia</div>
+                <div class="stat-value" id="last-latency">-</div>
+            </div>
+        </div>
+
+        <div class="responses">
+            <h3>Respuestas del backend</h3>
+            <div id="responses"></div>
+        </div>
+
+        <footer>
+            Cada peticion la atiende una replica distinta del backend (round-robin de Swarm).
+            <br>
+            Visualizer del cluster: <strong>puerto 8080</strong>
+        </footer>
+    </div>
+
+    <script>
+        let totalCalls = 0;
+        const seenHosts = new Set();
+
+        async function callBackend() {
+            const t0 = performance.now();
+            try {
+                const res = await fetch('/api');
+                const data = await res.json();
+                const ms = Math.round(performance.now() - t0);
+
+                totalCalls++;
+                seenHosts.add(data.container_hostname);
+
+                document.getElementById('total-calls').textContent = totalCalls;
+                document.getElementById('unique-hosts').textContent = seenHosts.size;
+                document.getElementById('last-latency').textContent = ms + ' ms';
+
+                const div = document.createElement('div');
+                div.className = 'response';
+                div.innerHTML = `
+                    <span>Backend <span class="hostname">${data.container_hostname}</span></span>
+                    <span class="req-num">req #${data.request_count} en ese container</span>
+                    <span class="ts">${new Date().toLocaleTimeString()}</span>
+                `;
+                document.getElementById('responses').prepend(div);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function stress(n) {
+            for (let i = 0; i < n; i++) {
+                await callBackend();
+                await new Promise(r => setTimeout(r, 100));
+            }
+        }
+
+        function clearResponses() {
+            document.getElementById('responses').innerHTML = '';
+            totalCalls = 0;
+            seenHosts.clear();
+            document.getElementById('total-calls').textContent = 0;
+            document.getElementById('unique-hosts').textContent = 0;
+            document.getElementById('last-latency').textContent = '-';
+        }
+    </script>
+</body>
+</html>
