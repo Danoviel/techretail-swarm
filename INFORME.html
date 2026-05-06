@@ -290,10 +290,10 @@
 <h2>4. Implementacion paso a paso</h2>
 
 <h3>4.1 Plataforma utilizada</h3>
-<p>Originalmente se planifico usar <strong>Play with Docker (PWD)</strong>, recomendado por el docente. Al intentar acceder se constato que <strong>PWD fue deprecado a partir del 1 de marzo de 2026</strong>:</p>
+<p>Al inicio queriamos usar <strong>Play with Docker (PWD)</strong> como sugiere el docente, pero al entrar a la pagina nos topamos con un aviso de que <strong>PWD fue dado de baja el 1 de marzo de 2026</strong>:</p>
 <blockquote>"Deprecation notice: Play with Docker will be unavailable starting March 1, 2026."</blockquote>
-<p>Como solucion se migro a <strong>Docker Desktop local</strong> levantando los 3 nodos del cluster como contenedores Docker-in-Docker (DinD) en una red bridge dedicada (<code>swarm-net</code>). Cada DinD ejecuta su propio daemon Docker, lo que permite simular el comportamiento multi-nodo de un cluster real.</p>
-<p>Este patron se automatizo en <code>scripts/local-setup.ps1</code> y se documenta en el repositorio.</p>
+<p>Como ya no funcionaba, decidimos montar el cluster en local usando <strong>Docker Desktop</strong>. Levantamos 3 contenedores Docker-in-Docker (DinD) en una red bridge (<code>swarm-net</code>): cada uno corre su propio daemon Docker y se comporta como un nodo fisico independiente.</p>
+<p>Para que sea facil de reproducir, lo armamos todo en un script (<code>scripts/local-setup.ps1</code>) que se corre con un solo comando.</p>
 
 <h3>4.2 Inicializacion del cluster</h3>
 <p>El script <code>local-setup.ps1</code> ejecuta automaticamente:</p>
@@ -322,7 +322,7 @@ docker exec node3 docker swarm join --token &lt;TOKEN&gt; &lt;IP_NODE1&gt;:2377<
 <div class="img-caption">Figura 3. Salida de <code>docker node ls</code>: 3 nodos en estado Ready, node1 como Leader</div>
 
 <h3>4.3 Vista general del cluster, servicios, secrets y configs</h3>
-<p>La siguiente captura combina las 4 piezas de evidencia exigidas por la rubrica del docente: nodos del cluster, servicios desplegados con sus replicas, secrets gestionados y configs montados.</p>
+<p>En esta captura juntamos todo lo importante en una sola pantalla: los 3 nodos, los 5 servicios con sus replicas, el secret de la BD y los 3 configs montados.</p>
 <img src="capturas/02-cluster-overview.png" alt="Vista general del cluster">
 <div class="img-caption">Figura 4. Vista combinada: nodos, servicios (con replicas escaladas a 4/4 y 5/5), secrets (db_password) y configs (3 archivos distribuidos)</div>
 
@@ -338,7 +338,7 @@ docker exec node3 docker swarm join --token &lt;TOKEN&gt; &lt;IP_NODE1&gt;:2377<
     <tr><td><code>index_html</code></td><td>frontend/index.html</td><td>/usr/share/nginx/html/index.html</td></tr>
     <tr><td><code>backend_server</code></td><td>backend/server.js</td><td>/app/server.js</td></tr>
 </table>
-<p>Esta decision evita la necesidad de construir y publicar una imagen propia del backend en Docker Hub. El codigo JavaScript se distribuye automaticamente por Swarm a cualquier nodo donde levante una replica.</p>
+<p>Hicimos esto asi para no tener que construir y subir una imagen propia del backend a Docker Hub. Swarm se encarga de copiar el <code>server.js</code> a cualquier nodo donde levante una replica.</p>
 
 <h3>4.4 Distribucion de replicas entre los nodos</h3>
 <p>Tras el escalado, los 12 contenedores del stack se distribuyen automaticamente entre los 3 nodos del cluster:</p>
@@ -373,7 +373,7 @@ ddq0cef6ysaa   techretail_database     replicated   1/1        mysql:8
 <div class="img-caption">Figura 3. Visualizador del cluster mostrando los 3 nodos y sus contenedores</div>
 
 <h3>4.7 Frontend (SPA demo)</h3>
-<p>La SPA accesible en <code>http://localhost</code> consume la API del backend y muestra el hostname del contenedor que respondio cada peticion. Diseñada para evidenciar visualmente el balanceo de carga entre replicas:</p>
+<p>La SPA en <code>http://localhost</code> hace fetch al backend y muestra el hostname del contenedor que respondio. Asi se ve directamente el balanceo entre replicas:</p>
 <img src="capturas/06-frontend-spa.png" alt="SPA del frontend">
 <div class="img-caption">Figura 4. Frontend SPA cargada en el navegador</div>
 
@@ -431,16 +431,16 @@ docker service scale techretail_backend=4</code></pre>
 
 <h3>6.1 Play with Docker fue deprecado</h3>
 <p><strong>Problema:</strong> El enunciado del docente sugeria usar Play with Docker. Al intentar acceder, la plataforma muestra un aviso de deprecacion efectivo desde el 1 de marzo de 2026 y redirige a la pagina de marketing.</p>
-<p><strong>Solucion:</strong> Se migro a <strong>Docker Desktop local</strong> simulando el cluster con 3 contenedores Docker-in-Docker (DinD) en una red bridge interna. Se automatizo el setup en <code>scripts/local-setup.ps1</code> para que cualquier evaluador pueda reproducir el ejercicio.</p>
+<p><strong>Solucion:</strong> Migramos a <strong>Docker Desktop local</strong> y levantamos los 3 nodos del cluster como contenedores Docker-in-Docker (DinD) en una red bridge interna. Lo automatizamos en <code>scripts/local-setup.ps1</code> para que cualquiera pueda reproducir el ejercicio con un solo comando.</p>
 
 <h3>6.2 Daemons internos de DinD tardan en arrancar</h3>
 <p><strong>Problema:</strong> Los contenedores <code>docker:dind</code> no exponen el daemon inmediatamente; el <code>dockerd</code> interno tarda entre 10 y 20 segundos en estar listo. La primera version del script usaba un <code>Start-Sleep</code> fijo de 12s, insuficiente para <code>node1</code>. Como consecuencia, <code>docker swarm init</code> fallaba silenciosamente, el join token quedaba vacio y los <code>swarm join</code> se ejecutaban sin token.</p>
-<p><strong>Solucion:</strong> Se reemplazo el sleep fijo por una <strong>funcion de polling activo</strong> (<code>Wait-DockerDaemon</code>) que reintenta hasta 90 segundos. Adicionalmente se agrego una funcion <code>Assert-Success</code> que verifica <code>$LASTEXITCODE</code> despues de cada paso critico.</p>
+<p><strong>Solucion:</strong> Cambiamos el sleep fijo por una funcion de <strong>polling activo</strong> (<code>Wait-DockerDaemon</code>) que reintenta hasta 90 segundos. Tambien agregamos una funcion <code>Assert-Success</code> que verifica <code>$LASTEXITCODE</code> despues de cada paso critico, asi si algo falla el script se aborta limpio en vez de seguir con datos rotos.</p>
 
 <h3>6.3 Imagenes Alpine no incluyen <code>bash</code></h3>
 <p><strong>Problema:</strong> Los scripts del proyecto fueron escritos con shebang <code>#!/usr/bin/env bash</code>. Al ejecutarlos dentro de un nodo DinD (basado en Alpine Linux), fallaban con:</p>
 <pre><code>env: can't execute 'bash': No such file or directory</code></pre>
-<p><strong>Solucion:</strong> Cambiar el shebang a <code>#!/bin/sh</code> en los 5 scripts (los comandos eran POSIX-compatibles, no se requirio otra modificacion).</p>
+<p><strong>Solucion:</strong> Cambiamos el shebang a <code>#!/bin/sh</code> en los 5 scripts. Los comandos ya eran POSIX-compatibles, asi que no hizo falta tocar nada mas.</p>
 
 <h3>6.4 Balanceo no se reflejaba en la SPA (problema critico)</h3>
 <p><strong>Problema:</strong> Despues del escalado del backend a 4 replicas, el stress test desde la SPA mostraba que las <strong>20 llamadas eran atendidas siempre por el mismo contenedor backend</strong> (CONTAINERS VISTOS = 1):</p>
@@ -477,11 +477,11 @@ docker service scale techretail_backend=4</code></pre>
 <img src="capturas/07b-stress-test-post-fix.png" alt="Stress test despues del fix">
 <div class="img-caption">Figura 8. Despues del fix: 20 llamadas, 4 containers diferentes respondiendo</div>
 
-<p>Este fue el problema tecnicamente mas interesante del proyecto: el balanceo "funcionaba" a nivel de Swarm desde el inicio, pero quedaba enmascarado por la combinacion de keep-alive HTTP + VIP. El cambio a DNSRR + resolver dinamico expuso el balanceo a nivel de cada peticion HTTP, ofreciendo una demostracion visual clara.</p>
+<p>Lo curioso es que Swarm si estaba balanceando desde el inicio, pero el keep-alive HTTP + VIP escondia el efecto. Con DNSRR + resolver dinamico cada request cae en una replica distinta y por fin se ve el balanceo en la SPA.</p>
 
 <h3>6.5 Permisos de ejecucion y <code>git pull</code></h3>
 <p><strong>Problema:</strong> Tras hacer <code>chmod +x scripts/*.sh</code> dentro de <code>node1</code>, git detectaba esos cambios de modo como "modificaciones locales" y bloqueaba un <code>git pull</code> posterior.</p>
-<p><strong>Solucion:</strong> Se descartaron los cambios locales con <code>git checkout -- scripts/</code> y se procedio con el pull. En adelante se uso la forma <code>sh ./script.sh</code> (sin necesidad del bit ejecutable).</p>
+<p><strong>Solucion:</strong> Descartamos los cambios locales con <code>git checkout -- scripts/</code> y volvimos a hacer pull. De ahi en adelante usamos <code>sh ./script.sh</code> para no tener que dar permisos de ejecucion cada vez.</p>
 
 <!-- ============== 7. REFLEXION ============== -->
 <h2>7. Reflexion sobre Docker Swarm</h2>
@@ -516,12 +516,10 @@ docker service scale techretail_backend=4</code></pre>
 <!-- ============== 8. CONCLUSIONES ============== -->
 <h2>8. Conclusiones</h2>
 <ol>
-    <li>La migracion a Docker Swarm resolvio los problemas operacionales de TechRetail: el escalado horizontal se ejecuta en segundos sin afectar el servicio, y la distribucion automatica entre nodos reduce el riesgo de single point of failure.</li>
-    <li>La separacion del codigo de aplicacion mediante <strong>Docker Configs</strong> simplifica el ciclo de despliegue: editar un archivo y volver a hacer <code>stack deploy</code> basta para actualizar todas las replicas, sin construir ni publicar imagenes propias.</li>
-    <li><strong>Docker Secrets</strong> elimina el riesgo de exponer credenciales en variables de entorno o archivos <code>.env</code> versionados, cumpliendo practicas basicas de seguridad.</li>
-    <li>El <strong>endpoint_mode</strong> del servicio (VIP vs DNSRR) tiene un impacto directo en el comportamiento del balanceo. Para aplicaciones que esperan round-robin perceptible a nivel de peticion HTTP, DNSRR + resolver dinamico en el proxy ofrece la mejor experiencia.</li>
-    <li>La portabilidad de Docker Swarm hacia entornos locales mediante DinD permite reproducir un cluster multi-nodo en cualquier laptop sin dependencias externas — una capacidad valiosa cuando plataformas en la nube como Play with Docker dejan de estar disponibles.</li>
-    <li>Para una primera modernizacion en una empresa mediana, Docker Swarm ofrece la mejor relacion valor/complejidad. Una migracion futura a Kubernetes es factible si el negocio lo requiere, pero no es necesaria desde el dia uno.</li>
+    <li>Docker Swarm resuelve bien el problema de TechRetail: con un par de comandos escalamos en caliente y los servicios se distribuyen solos entre los nodos. Levantar el cluster nos tomo menos de un minuto.</li>
+    <li>Usar <strong>Docker Configs</strong> para inyectar el codigo del backend nos ahorro tener que armar una imagen propia y subirla a Docker Hub. Para iterar es mucho mas comodo: editas el archivo, vuelves a hacer <code>stack deploy</code> y listo.</li>
+    <li><strong>Docker Secrets</strong> es la forma correcta de pasar contraseñas: nunca aparecen en el <code>docker-compose.yml</code> ni en variables de entorno, viajan cifradas y se montan como archivo dentro del contenedor.</li>
+    <li>Lo del <code>endpoint_mode: dnsrr</code> fue el mayor aprendizaje: por defecto Swarm usa VIP y nginx con keep-alive deja todas las peticiones colgadas en una sola replica. Cambiando a DNSRR + resolver dinamico se ve el balanceo real entre las 4 replicas.</li>
 </ol>
 
 <!-- ============== 9. REPRODUCIBILIDAD ============== -->
@@ -573,11 +571,6 @@ docker service scale techretail_backend=4
 docker stack rm techretail
 docker secret rm db_password
 docker swarm leave --force</code></pre>
-
-<div class="footer-note">
-    Informe generado el 5 de mayo de 2026 — David Carhuaz Vicaña y Wilson Lopez<br>
-    Repositorio: github.com/Danoviel/techretail-swarm
-</div>
 
 </body>
 </html>
