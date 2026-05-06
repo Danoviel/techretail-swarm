@@ -3,7 +3,10 @@
 
 **Curso:** Desarrollo en la Nube
 **Docente:** Jaime Farfan
-**Estudiante:** David Carhuaz Vicaña
+**Integrantes:**
+- David Carhuaz Vicaña
+- Wilsoez
+
 **Carrera:** Diseño y Desarrollo de Software
 **Fecha:** 5 de mayo de 2026
 **Repositorio:** https://github.com/Danoviel/techretail-swarm
