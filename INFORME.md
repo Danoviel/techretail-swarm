@@ -1,8 +1,8 @@
 # Informe Técnico
 # Despliegue de TechRetail con Docker Swarm
 
-**Curso:** _[completar]_
-**Docente:** _[completar]_
+**Curso:** Desarrollo en la Nube
+**Docente:** Jaime Farfan
 **Estudiante:** David Carhuaz Vicaña
 **Carrera:** Diseño y Desarrollo de Software
 **Fecha:** 5 de mayo de 2026
