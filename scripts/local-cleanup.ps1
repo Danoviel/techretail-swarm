@@ -5,12 +5,16 @@
 # rehacer todo desde cero.
 # ============================================================================
 
+$ErrorActionPreference = "Continue"
+
 Write-Host ""
 Write-Host ">>> Eliminando nodos node1, node2, node3..." -ForegroundColor Yellow
-docker rm -f node1 node2 node3 2>$null | Out-Null
+foreach ($n in @("node1", "node2", "node3")) {
+    docker rm -f $n 2>&1 | Out-Null
+}
 
 Write-Host ">>> Eliminando red 'swarm-net'..." -ForegroundColor Yellow
-docker network rm swarm-net 2>$null | Out-Null
+docker network rm swarm-net 2>&1 | Out-Null
 
 Write-Host ""
 Write-Host ">>> Limpieza completa." -ForegroundColor Green
