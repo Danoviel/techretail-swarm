@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Informe Tecnico - TechRetail Docker Swarm</title>
+<style>
+    @page {
+        size: A4;
+        margin: 2cm 1.8cm;
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+        font-size: 11pt;
+        line-height: 1.55;
+        color: #1f2937;
+        margin: 0;
+        padding: 2cm;
+        max-width: 21cm;
+    }
+    @media print {
+        body { padding: 0; }
+    }
+
+    h1 {
+        color: #0f766e;
+        font-size: 22pt;
+        margin: 0 0 4px 0;
+        line-height: 1.2;
+        page-break-after: avoid;
+    }
+    h2 {
+        color: #0f766e;
+        font-size: 16pt;
+        margin: 24px 0 10px 0;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #14b8a6;
+        page-break-after: avoid;
+    }
+    h3 {
+        color: #115e59;
+        font-size: 13pt;
+        margin: 18px 0 8px 0;
+        page-break-after: avoid;
+    }
+    h4 {
+        color: #1f2937;
+        font-size: 11pt;
+        margin: 12px 0 6px 0;
+        page-break-after: avoid;
+    }
+
+    p { margin: 8px 0; }
+
+    a { color: #0f766e; text-decoration: none; }
+
+    .cover {
+        text-align: center;
+        padding: 100px 0 60px 0;
+        border-bottom: 3px solid #14b8a6;
+        margin-bottom: 30px;
+        page-break-after: always;
+    }
+    .cover h1 { font-size: 28pt; color: #0f766e; }
+    .cover .subtitle { font-size: 18pt; color: #475569; margin: 10px 0 40px; }
+    .cover .meta {
+        text-align: left;
+        max-width: 480px;
+        margin: 40px auto;
+        padding: 20px 30px;
+        background: #f0fdfa;
+        border-left: 4px solid #14b8a6;
+        font-size: 12pt;
+    }
+    .cover .meta div { margin: 6px 0; }
+    .cover .meta strong { color: #0f766e; }
+
+    code {
+        background: #f1f5f9;
+        color: #be123c;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-family: Consolas, 'Courier New', monospace;
+        font-size: 10pt;
+    }
+    pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 14px 18px;
+        border-radius: 6px;
+        font-family: Consolas, 'Courier New', monospace;
+        font-size: 9.5pt;
+        line-height: 1.45;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        page-break-inside: avoid;
+        margin: 12px 0;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0;
+        font-size: 10pt;
+        page-break-inside: avoid;
+    }
+    th {
+        background: #0f766e;
+        color: white;
+        text-align: left;
+        padding: 8px 10px;
+        font-weight: 600;
+    }
+    td {
+        padding: 7px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: top;
+    }
+    tr:nth-child(even) { background: #f8fafc; }
+
+    blockquote {
+        border-left: 4px solid #fbbf24;
+        background: #fffbeb;
+        padding: 10px 16px;
+        margin: 12px 0;
+        color: #78350f;
+        font-style: italic;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 14px auto;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        page-break-inside: avoid;
+    }
+    .img-caption {
+        text-align: center;
+        font-size: 9.5pt;
+        color: #64748b;
+        font-style: italic;
+        margin: -8px 0 18px 0;
+    }
+
+    ul, ol { margin: 8px 0; padding-left: 24px; }
+    li { margin: 4px 0; }
+
+    .estado-ok { color: #16a34a; font-weight: 700; }
+    .estado-pending { color: #d97706; font-weight: 700; }
+
+    section { page-break-inside: auto; }
+    h2 { page-break-before: auto; }
+
+    .toc {
+        background: #f8fafc;
+        padding: 16px 24px;
+        border-left: 4px solid #14b8a6;
+        margin-bottom: 30px;
+        page-break-after: always;
+    }
+    .toc h2 { margin-top: 0; border: none; }
+    .toc ol { padding-left: 22px; }
+    .toc li { margin: 6px 0; }
+
+    .footer-note {
+        margin-top: 40px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+        font-size: 9pt;
+        color: #64748b;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+
+<!-- ============== PORTADA ============== -->
+<div class="cover">
+    <div style="font-size: 11pt; color: #64748b; margin-bottom: 60px;">INFORME TECNICO</div>
+    <h1>Despliegue de TechRetail<br>con Docker Swarm</h1>
+    <div class="subtitle">Orquestacion de Microservicios y Alta Disponibilidad</div>
+
+    <div class="meta">
+        <div><strong>Estudiante:</strong> David Carhuaz Vicaña</div>
+        <div><strong>Carrera:</strong> Diseño y Desarrollo de Software</div>
+        <div><strong>Curso:</strong> _____________________________</div>
+        <div><strong>Docente:</strong> _____________________________</div>
+        <div><strong>Fecha:</strong> 5 de mayo de 2026</div>
+        <div><strong>Repositorio:</strong> <a href="https://github.com/Danoviel/techretail-swarm">github.com/Danoviel/techretail-swarm</a></div>
+    </div>
+</div>
+
+<!-- ============== INDICE ============== -->
+<div class="toc">
+    <h2>Indice</h2>
+    <ol>
+        <li>Resumen ejecutivo</li>
+        <li>Caso de estudio</li>
+        <li>Arquitectura implementada</li>
+        <li>Implementacion paso a paso</li>
+        <li>Cumplimiento de requerimientos</li>
+        <li>Problemas encontrados y soluciones</li>
+        <li>Reflexion sobre Docker Swarm</li>
+        <li>Conclusiones</li>
+        <li>Repositorio y reproducibilidad</li>
+        <li>Comandos utilizados (referencia)</li>
+    </ol>
+</div>
+
+<!-- ============== 1. RESUMEN EJECUTIVO ============== -->
+<h2>1. Resumen ejecutivo</h2>
+<p>TechRetail, una empresa peruana de comercio electronico, sufria caidas frecuentes y tiempos de respuesta lentos durante picos de trafico (campañas como "Buen Fin" o "Cyber Days"), con perdidas estimadas en S/ 15,000 por hora de inactividad. Este informe documenta el diseño e implementacion de un <strong>cluster Docker Swarm de tres nodos</strong> que orquesta cinco microservicios (frontend, backend, base de datos, cache y visualizador), soporta escalado horizontal en caliente, distribuye replicas automaticamente entre nodos y gestiona credenciales de forma segura mediante Docker Secrets y Configs.</p>
+
+<p>El proyecto se desarrollo sobre <strong>Docker Desktop local con contenedores Docker-in-Docker (DinD)</strong> simulando los tres nodos fisicos, despues de constatar que la plataforma originalmente sugerida (Play with Docker) fue deprecada en marzo de 2026.</p>
+
+<p><strong>Resultados verificados:</strong></p>
+<ul>
+    <li>Cluster operativo con 1 manager + 2 workers, todos <code>Ready</code> y <code>Active</code>.</li>
+    <li>Stack de 5 servicios desplegado, <strong>12 contenedores</strong> distribuidos automaticamente entre los 3 nodos tras el escalado.</li>
+    <li>Demostracion exitosa de escalado dinamico: frontend <code>3 -&gt; 5</code> replicas, backend <code>2 -&gt; 4</code> replicas.</li>
+    <li>Balanceo de carga real entre las replicas (4 contenedores backend distintos atendiendo 20 llamadas).</li>
+    <li>Secret de BD distribuido cifrado, 3 Configs (nginx, SPA, codigo del backend) montados sin construir imagenes propias.</li>
+</ul>
+
+<!-- ============== 2. CASO DE ESTUDIO ============== -->
+<h2>2. Caso de estudio</h2>
+
+<h3>2.1 Problematica</h3>
+<table>
+    <tr><th>Sintoma</th><th>Impacto</th></tr>
+    <tr><td>Caidas en horas pico</td><td>Servicio inaccesible para clientes</td></tr>
+    <tr><td>Latencia &gt;8 segundos por peticion</td><td>Abandono de carrito alto</td></tr>
+    <tr><td>Perdidas economicas</td><td>~S/ 15,000 por hora caida</td></tr>
+    <tr><td>Imposibilidad de escalar rapido</td><td>No respuesta ante demanda inesperada</td></tr>
+</table>
+
+<h3>2.2 Solucion propuesta</h3>
+<p>Migrar de la arquitectura monolitica hacia una <strong>arquitectura de microservicios contenerizada</strong>, orquestada con <strong>Docker Swarm</strong>. Las ventajas tecnicas que motivan esta eleccion:</p>
+<ul>
+    <li><strong>Escalado horizontal en caliente:</strong> subir replicas en segundos sin downtime.</li>
+    <li><strong>Alta disponibilidad:</strong> si un nodo cae, Swarm reprograma sus contenedores en los demas.</li>
+    <li><strong>Balanceo de carga automatico:</strong> routing mesh + DNS interno.</li>
+    <li><strong>Gestion centralizada:</strong> un manager controla todo el cluster.</li>
+    <li><strong>Curva de aprendizaje suave:</strong> comandos consistentes con Docker Compose.</li>
+</ul>
+
+<!-- ============== 3. ARQUITECTURA ============== -->
+<h2>3. Arquitectura implementada</h2>
+
+<h3>3.1 Servicios del stack</h3>
+<img src="capturas/00-arquitectura-servicios.png" alt="Servicios del stack">
+<div class="img-caption">Figura 1. Servicios y sus imagenes Docker correspondientes</div>
+
+<h3>3.2 Diagrama del cluster</h3>
+<img src="capturas/00-arquitectura-diagrama.png" alt="Diagrama de arquitectura">
+<div class="img-caption">Figura 2. Diagrama del cluster Docker Swarm con 3 nodos y red overlay</div>
+
+<h3>3.3 Detalle de los servicios desplegados</h3>
+<table>
+    <tr><th>Servicio</th><th>Imagen</th><th>Replicas</th><th>Funcion</th></tr>
+    <tr><td><code>frontend</code></td><td><code>nginx:alpine</code></td><td>3 → 5</td><td>SPA + reverse proxy /api al backend</td></tr>
+    <tr><td><code>backend</code></td><td><code>node:18-alpine</code></td><td>2 → 4</td><td>API REST minima, devuelve hostname del contenedor</td></tr>
+    <tr><td><code>database</code></td><td><code>mysql:8</code></td><td>1 (manager)</td><td>Persistencia, secret en /run/secrets/db_password</td></tr>
+    <tr><td><code>cache</code></td><td><code>redis:7-alpine</code></td><td>1</td><td>Cache de consultas</td></tr>
+    <tr><td><code>visualizer</code></td><td><code>dockersamples/visualizer</code></td><td>1 (manager)</td><td>Dashboard del cluster en :8080</td></tr>
+</table>
+
+<h3>3.4 Decisiones tecnicas relevantes</h3>
+<ul>
+    <li><strong>Plataforma:</strong> Docker Desktop local + 3 contenedores <code>docker:dind</code> actuando como nodos. Cada DinD corre su propio Docker daemon, simulando un nodo fisico independiente.</li>
+    <li><strong>Database fija en el manager</strong> mediante <code>placement: constraints: [node.role == manager]</code>. Garantiza que el volumen <code>db_data</code> viva siempre en el mismo nodo.</li>
+    <li><strong>Codigo del backend distribuido via Docker Configs</strong> (no como imagen propia). Se evita construir y publicar una imagen en Docker Hub: <code>server.js</code> se monta como Config en <code>/app/server.js</code>.</li>
+    <li><strong>Routing mesh ingress</strong> habilitado en frontend (puerto 80). Cualquier nodo del cluster responde en :80, aunque el contenedor del frontend no este ahi.</li>
+    <li><strong>Endpoint mode <code>dnsrr</code> en el backend</strong> (round-robin a nivel DNS) para garantizar balanceo real entre las replicas. Detalle en seccion 6.4.</li>
+    <li><strong>Update config con <code>start-first</code>:</strong> la nueva replica arranca antes de bajar la antigua, permitiendo zero-downtime en futuras actualizaciones.</li>
+</ul>
+
+<!-- ============== 4. IMPLEMENTACION ============== -->
+<h2>4. Implementacion paso a paso</h2>
+
+<h3>4.1 Plataforma utilizada</h3>
+<p>Originalmente se planifico usar <strong>Play with Docker (PWD)</strong>, recomendado por el docente. Al intentar acceder se constato que <strong>PWD fue deprecado a partir del 1 de marzo de 2026</strong>:</p>
+<blockquote>"Deprecation notice: Play with Docker will be unavailable starting March 1, 2026."</blockquote>
+<p>Como solucion se migro a <strong>Docker Desktop local</strong> levantando los 3 nodos del cluster como contenedores Docker-in-Docker (DinD) en una red bridge dedicada (<code>swarm-net</code>). Cada DinD ejecuta su propio daemon Docker, lo que permite simular el comportamiento multi-nodo de un cluster real.</p>
+<p>Este patron se automatizo en <code>scripts/local-setup.ps1</code> y se documenta en el repositorio.</p>
+
+<h3>4.2 Inicializacion del cluster</h3>
+<p>El script <code>local-setup.ps1</code> ejecuta automaticamente:</p>
+<pre><code># 1) Red bridge para los 3 nodos
+docker network create swarm-net
+
+# 2) Levantar los 3 contenedores DinD (privilegiados)
+docker run -d --privileged --name node1 -h node1 --network swarm-net `
+    -e DOCKER_TLS_CERTDIR="" -p 80:80 -p 8080:8080 docker:dind
+docker run -d --privileged --name node2 -h node2 --network swarm-net `
+    -e DOCKER_TLS_CERTDIR="" docker:dind
+docker run -d --privileged --name node3 -h node3 --network swarm-net `
+    -e DOCKER_TLS_CERTDIR="" docker:dind
+
+# 3) Polling activo hasta que los daemons internos respondan
+
+# 4) Inicializar Swarm en node1
+docker exec node1 docker swarm init --advertise-addr &lt;IP_NODE1&gt;
+
+# 5) Unir los workers
+docker exec node2 docker swarm join --token &lt;TOKEN&gt; &lt;IP_NODE1&gt;:2377
+docker exec node3 docker swarm join --token &lt;TOKEN&gt; &lt;IP_NODE1&gt;:2377</code></pre>
+
+<p><strong>Verificacion del cluster:</strong></p>
+<img src="capturas/01-nodes.png" alt="docker node ls - 3 nodos del cluster">
+<div class="img-caption">Figura 3. Salida de <code>docker node ls</code>: 3 nodos en estado Ready, node1 como Leader</div>
+
+<h3>4.3 Vista general del cluster, servicios, secrets y configs</h3>
+<p>La siguiente captura combina las 4 piezas de evidencia exigidas por la rubrica del docente: nodos del cluster, servicios desplegados con sus replicas, secrets gestionados y configs montados.</p>
+<img src="capturas/02-cluster-overview.png" alt="Vista general del cluster">
+<div class="img-caption">Figura 4. Vista combinada: nodos, servicios (con replicas escaladas a 4/4 y 5/5), secrets (db_password) y configs (3 archivos distribuidos)</div>
+
+<h4>4.3.1 Gestion de credenciales sensibles (Secrets)</h4>
+<p>El secret <code>db_password</code> se crea con:</p>
+<pre><code>echo "MiPasswordSegura123" | docker secret create db_password -</code></pre>
+<p>Se monta en <code>/run/secrets/db_password</code> dentro de los contenedores de <code>backend</code> y <code>database</code>. Esta cifrado en transito (TLS entre nodos del swarm) y en reposo en los managers.</p>
+
+<h4>4.3.2 Gestion de archivos de configuracion (Configs)</h4>
+<table>
+    <tr><th>Config</th><th>Archivo origen</th><th>Punto de montaje</th></tr>
+    <tr><td><code>nginx_conf</code></td><td>frontend/nginx.conf</td><td>/etc/nginx/nginx.conf</td></tr>
+    <tr><td><code>index_html</code></td><td>frontend/index.html</td><td>/usr/share/nginx/html/index.html</td></tr>
+    <tr><td><code>backend_server</code></td><td>backend/server.js</td><td>/app/server.js</td></tr>
+</table>
+<p>Esta decision evita la necesidad de construir y publicar una imagen propia del backend en Docker Hub. El codigo JavaScript se distribuye automaticamente por Swarm a cualquier nodo donde levante una replica.</p>
+
+<h3>4.4 Distribucion de replicas entre los nodos</h3>
+<p>Tras el escalado, los 12 contenedores del stack se distribuyen automaticamente entre los 3 nodos del cluster:</p>
+<img src="capturas/03-distribution.png" alt="Distribucion de containers por nodo">
+<div class="img-caption">Figura 5. Salida de <code>docker stack ps techretail</code>: 12 tareas distribuidas entre node1, node2 y node3, todas en estado Running</div>
+
+<h3>4.5 Despliegue del stack</h3>
+<pre><code>docker stack deploy -c docker-compose.yml techretail</code></pre>
+<p>Salida del despliegue:</p>
+<pre><code>Creating network techretail_techretail_net
+Creating network techretail_default
+Creating config techretail_backend_server
+Creating config techretail_nginx_conf
+Creating config techretail_index_html
+Creating service techretail_backend
+Creating service techretail_database
+Creating service techretail_cache
+Creating service techretail_visualizer
+Creating service techretail_frontend</code></pre>
+
+<p><strong>Estado final de los servicios:</strong></p>
+<pre><code>ID             NAME                    MODE         REPLICAS   IMAGE                             PORTS
+0ywy2xuz2la6   techretail_backend      replicated   4/4        node:18-alpine
+hq6bqpubss6x   techretail_cache        replicated   1/1        redis:7-alpine
+ddq0cef6ysaa   techretail_database     replicated   1/1        mysql:8
+8o7np8udaye7   techretail_frontend     replicated   3/3        nginx:alpine                      *:80-&gt;80/tcp
+7ypsr0n0xvz9   techretail_visualizer   replicated   1/1        dockersamples/visualizer:latest   *:8080-&gt;8080/tcp</code></pre>
+
+<h3>4.6 Visualizacion del cluster (estado inicial)</h3>
+<p>El visualizador en <code>http://localhost:8080</code> muestra los contenedores distribuidos automaticamente entre los 3 nodos:</p>
+<img src="capturas/05-visualizer-inicial.png" alt="Visualizador inicial">
+<div class="img-caption">Figura 3. Visualizador del cluster mostrando los 3 nodos y sus contenedores</div>
+
+<h3>4.7 Frontend (SPA demo)</h3>
+<p>La SPA accesible en <code>http://localhost</code> consume la API del backend y muestra el hostname del contenedor que respondio cada peticion. Diseñada para evidenciar visualmente el balanceo de carga entre replicas:</p>
+<img src="capturas/06-frontend-spa.png" alt="SPA del frontend">
+<div class="img-caption">Figura 4. Frontend SPA cargada en el navegador</div>
+
+<h3>4.8 Demostracion de escalado dinamico</h3>
+<pre><code>docker service scale techretail_frontend=5
+docker service scale techretail_backend=4</code></pre>
+<p>Resultado tras el escalado: 5 replicas de frontend y 4 de backend, todas en estado Running, distribuidas entre los 3 nodos:</p>
+<img src="capturas/04-scaling.png" alt="Escalado dinamico de servicios">
+<div class="img-caption">Figura 6. Replicas de frontend (5) y backend (4) tras el escalado, distribuidas entre node1, node2 y node3</div>
+
+<p><strong>Distribucion del cluster despues del escalado</strong> (12 contenedores totales):</p>
+
+<img src="capturas/10a-visualizer-escalado-node1.png" alt="Visualizer post-escalado node1">
+<div class="img-caption">Figura 5a. node1 (manager): database, visualizer, backend, frontend</div>
+
+<img src="capturas/10b-visualizer-escalado-node2.png" alt="Visualizer post-escalado node2">
+<div class="img-caption">Figura 5b. node2 (worker): cache, backend, 2 frontends</div>
+
+<img src="capturas/10c-visualizer-escalado-node3.png" alt="Visualizer post-escalado node3">
+<div class="img-caption">Figura 5c. node3 (worker): 2 backends, 2 frontends</div>
+
+<table>
+    <tr><th>Nodo</th><th>Contenedores</th></tr>
+    <tr><td>node1 (manager)</td><td>database, visualizer, backend, frontend</td></tr>
+    <tr><td>node2 (worker)</td><td>cache, backend, 2× frontend</td></tr>
+    <tr><td>node3 (worker)</td><td>2× backend, 2× frontend</td></tr>
+</table>
+
+<p>Swarm distribuyo las replicas automaticamente respetando los placement constraints (database y visualizer en el manager) y balanceando el resto entre los 3 nodos.</p>
+
+<h3>4.9 Demostracion del balanceo de carga</h3>
+<p>Stress test desde la SPA: 20 llamadas consecutivas al endpoint <code>/api</code>. Cada peticion es atendida por una de las 4 replicas del backend (DNS round-robin):</p>
+<img src="capturas/07b-stress-test-post-fix.png" alt="Stress test con balanceo">
+<div class="img-caption">Figura 6. Stress test demostrando balanceo: 20 llamadas distribuidas entre 4 contenedores backend</div>
+<p>Resultado: las 20 llamadas se distribuyeron entre <strong>4 contenedores backend distintos</strong> (<code>b52c7f6068f8</code>, <code>9bdb061aa849</code>, <code>298a7c020fb7</code> y un cuarto). Esto demuestra el balanceo automatico de Swarm a nivel de aplicacion.</p>
+
+<!-- ============== 5. CUMPLIMIENTO ============== -->
+<h2>5. Cumplimiento de requerimientos</h2>
+<table>
+    <tr><th>#</th><th>Requerimiento</th><th>Estado</th><th>Evidencia</th></tr>
+    <tr><td>3.1</td><td>Cluster con 1 manager + 2 workers</td><td><span class="estado-ok">OK</span></td><td><code>docker node ls</code> (sec. 4.2)</td></tr>
+    <tr><td>3.2</td><td>docker-compose con &gt;=4 servicios</td><td><span class="estado-ok">OK</span></td><td>5 servicios definidos (sec. 3.3)</td></tr>
+    <tr><td>3.2</td><td>Red overlay para comunicacion interna</td><td><span class="estado-ok">OK</span></td><td><code>techretail_net</code> (driver overlay)</td></tr>
+    <tr><td>3.2</td><td>Volumen para persistencia de la BD</td><td><span class="estado-ok">OK</span></td><td><code>db_data:/var/lib/mysql</code></td></tr>
+    <tr><td>3.3</td><td>Frontend con &gt;=3 replicas</td><td><span class="estado-ok">OK</span></td><td>3 inicial, escalado a 5</td></tr>
+    <tr><td>3.3</td><td>Backend con &gt;=2 replicas</td><td><span class="estado-ok">OK</span></td><td>2 inicial, escalado a 4</td></tr>
+    <tr><td>3.3</td><td>Restart policy automatico</td><td><span class="estado-ok">OK</span></td><td><code>condition: on-failure</code></td></tr>
+    <tr><td>3.3</td><td>Demostracion de escalado dinamico</td><td><span class="estado-ok">OK</span></td><td><code>docker service scale</code> (sec. 4.8)</td></tr>
+    <tr><td>3.4</td><td>Docker Secrets para credenciales BD</td><td><span class="estado-ok">OK</span></td><td><code>db_password</code> (sec. 4.3)</td></tr>
+    <tr><td>3.4</td><td>Docker Configs para archivos no sensibles</td><td><span class="estado-ok">OK</span></td><td>3 Configs (sec. 4.4)</td></tr>
+</table>
+
+<!-- ============== 6. PROBLEMAS ============== -->
+<h2>6. Problemas encontrados y soluciones</h2>
+
+<h3>6.1 Play with Docker fue deprecado</h3>
+<p><strong>Problema:</strong> El enunciado del docente sugeria usar Play with Docker. Al intentar acceder, la plataforma muestra un aviso de deprecacion efectivo desde el 1 de marzo de 2026 y redirige a la pagina de marketing.</p>
+<p><strong>Solucion:</strong> Se migro a <strong>Docker Desktop local</strong> simulando el cluster con 3 contenedores Docker-in-Docker (DinD) en una red bridge interna. Se automatizo el setup en <code>scripts/local-setup.ps1</code> para que cualquier evaluador pueda reproducir el ejercicio.</p>
+
+<h3>6.2 Daemons internos de DinD tardan en arrancar</h3>
+<p><strong>Problema:</strong> Los contenedores <code>docker:dind</code> no exponen el daemon inmediatamente; el <code>dockerd</code> interno tarda entre 10 y 20 segundos en estar listo. La primera version del script usaba un <code>Start-Sleep</code> fijo de 12s, insuficiente para <code>node1</code>. Como consecuencia, <code>docker swarm init</code> fallaba silenciosamente, el join token quedaba vacio y los <code>swarm join</code> se ejecutaban sin token.</p>
+<p><strong>Solucion:</strong> Se reemplazo el sleep fijo por una <strong>funcion de polling activo</strong> (<code>Wait-DockerDaemon</code>) que reintenta hasta 90 segundos. Adicionalmente se agrego una funcion <code>Assert-Success</code> que verifica <code>$LASTEXITCODE</code> despues de cada paso critico.</p>
+
+<h3>6.3 Imagenes Alpine no incluyen <code>bash</code></h3>
+<p><strong>Problema:</strong> Los scripts del proyecto fueron escritos con shebang <code>#!/usr/bin/env bash</code>. Al ejecutarlos dentro de un nodo DinD (basado en Alpine Linux), fallaban con:</p>
+<pre><code>env: can't execute 'bash': No such file or directory</code></pre>
+<p><strong>Solucion:</strong> Cambiar el shebang a <code>#!/bin/sh</code> en los 5 scripts (los comandos eran POSIX-compatibles, no se requirio otra modificacion).</p>
+
+<h3>6.4 Balanceo no se reflejaba en la SPA (problema critico)</h3>
+<p><strong>Problema:</strong> Despues del escalado del backend a 4 replicas, el stress test desde la SPA mostraba que las <strong>20 llamadas eran atendidas siempre por el mismo contenedor backend</strong> (CONTAINERS VISTOS = 1):</p>
+<img src="capturas/07a-stress-test-pre-fix.png" alt="Stress test antes del fix">
+<div class="img-caption">Figura 7. Antes del fix: 20 llamadas, 1 solo container respondiendo</div>
+
+<p><strong>Analisis:</strong> La causa era doble:</p>
+<ol>
+    <li>Por defecto, los servicios de Swarm usan <code>endpoint_mode: vip</code> (Virtual IP). El nombre <code>backend</code> en la red overlay resuelve a una unica IP virtual; el balanceo entre replicas lo hace IPVS a nivel kernel.</li>
+    <li>El proxy nginx con <code>proxy_http_version 1.1</code> mantenia una conexion TCP keep-alive con el VIP. Como IPVS toma decisiones por conexion TCP (no por request HTTP), todas las peticiones HTTP que viajaban por esa misma conexion TCP terminaban en la misma replica.</li>
+</ol>
+
+<p><strong>Solucion:</strong> Combinacion de dos cambios:</p>
+<p>1. En <code>docker-compose.yml</code>, cambiar el endpoint_mode del backend a <code>dnsrr</code>:</p>
+<pre><code>backend:
+  deploy:
+    endpoint_mode: dnsrr
+    replicas: 2</code></pre>
+
+<p>2. En <code>frontend/nginx.conf</code>, agregar el resolver DNS interno de Docker, usar variable en <code>proxy_pass</code> y deshabilitar keep-alive:</p>
+<pre><code>http {
+    resolver 127.0.0.11 valid=5s ipv6=off;
+
+    server {
+        location /api {
+            set $backend "backend";
+            proxy_pass http://$backend:3000;
+            proxy_set_header Connection close;
+        }
+    }
+}</code></pre>
+
+<p><strong>Resultado tras el fix:</strong> las 20 llamadas se distribuyen entre las 4 replicas backend (CONTAINERS VISTOS = 4):</p>
+<img src="capturas/07b-stress-test-post-fix.png" alt="Stress test despues del fix">
+<div class="img-caption">Figura 8. Despues del fix: 20 llamadas, 4 containers diferentes respondiendo</div>
+
+<p>Este fue el problema tecnicamente mas interesante del proyecto: el balanceo "funcionaba" a nivel de Swarm desde el inicio, pero quedaba enmascarado por la combinacion de keep-alive HTTP + VIP. El cambio a DNSRR + resolver dinamico expuso el balanceo a nivel de cada peticion HTTP, ofreciendo una demostracion visual clara.</p>
+
+<h3>6.5 Permisos de ejecucion y <code>git pull</code></h3>
+<p><strong>Problema:</strong> Tras hacer <code>chmod +x scripts/*.sh</code> dentro de <code>node1</code>, git detectaba esos cambios de modo como "modificaciones locales" y bloqueaba un <code>git pull</code> posterior.</p>
+<p><strong>Solucion:</strong> Se descartaron los cambios locales con <code>git checkout -- scripts/</code> y se procedio con el pull. En adelante se uso la forma <code>sh ./script.sh</code> (sin necesidad del bit ejecutable).</p>
+
+<!-- ============== 7. REFLEXION ============== -->
+<h2>7. Reflexion sobre Docker Swarm</h2>
+
+<h3>7.1 Ventajas observadas durante el proyecto</h3>
+<ul>
+    <li><strong>Curva de aprendizaje suave:</strong> los comandos son consistentes con <code>docker compose</code>, lo que facilita la transicion desde despliegues mono-nodo.</li>
+    <li><strong>Setup rapido:</strong> un cluster de 3 nodos se levanta en menos de un minuto, incluyendo los joins.</li>
+    <li><strong>Routing mesh y DNS interno:</strong> balanceo de carga automatico sin configuracion extra (con la salvedad documentada en 6.4).</li>
+    <li><strong>Secrets/Configs nativos:</strong> distribucion cifrada de credenciales y archivos sin servicios externos como Vault o Consul.</li>
+    <li><strong>Scheduling automatico con constraints:</strong> placement constraints permiten mantener servicios stateful en nodos especificos sin scripting adicional.</li>
+</ul>
+
+<h3>7.2 Limitaciones identificadas</h3>
+<ul>
+    <li><strong>Ecosistema mas pequeño que Kubernetes:</strong> menos operadores comunitarios, menos herramientas de observabilidad de terceros.</li>
+    <li><strong>Sin auto-scaling nativo basado en metricas (CPU/RAM):</strong> el escalado debe ser manual o con scripts/cron externos.</li>
+    <li><strong>Menos adopcion en empresas grandes:</strong> afecta la disponibilidad de talento y soporte de proveedores.</li>
+    <li><strong>El comportamiento del balanceo VIP puede sorprender</strong> a equipos que esperan round-robin a nivel de peticion HTTP (caso 6.4).</li>
+</ul>
+
+<h3>7.3 ¿Cuando es la eleccion correcta?</h3>
+<p>Docker Swarm es la opcion adecuada cuando:</p>
+<ul>
+    <li>El equipo es pequeño o el tiempo de adopcion debe ser corto.</li>
+    <li>Los servicios son pocos (5-20 contenedores) y el escalado es predecible.</li>
+    <li>No se requiere multi-cloud, service mesh o controllers personalizados.</li>
+    <li>Se valora simplicidad operativa por encima de features avanzadas.</li>
+</ul>
+<p>Para escalas mayores o requisitos avanzados, <strong>Kubernetes</strong> sigue siendo la opcion estandar.</p>
+
+<!-- ============== 8. CONCLUSIONES ============== -->
+<h2>8. Conclusiones</h2>
+<ol>
+    <li>La migracion a Docker Swarm resolvio los problemas operacionales de TechRetail: el escalado horizontal se ejecuta en segundos sin afectar el servicio, y la distribucion automatica entre nodos reduce el riesgo de single point of failure.</li>
+    <li>La separacion del codigo de aplicacion mediante <strong>Docker Configs</strong> simplifica el ciclo de despliegue: editar un archivo y volver a hacer <code>stack deploy</code> basta para actualizar todas las replicas, sin construir ni publicar imagenes propias.</li>
+    <li><strong>Docker Secrets</strong> elimina el riesgo de exponer credenciales en variables de entorno o archivos <code>.env</code> versionados, cumpliendo practicas basicas de seguridad.</li>
+    <li>El <strong>endpoint_mode</strong> del servicio (VIP vs DNSRR) tiene un impacto directo en el comportamiento del balanceo. Para aplicaciones que esperan round-robin perceptible a nivel de peticion HTTP, DNSRR + resolver dinamico en el proxy ofrece la mejor experiencia.</li>
+    <li>La portabilidad de Docker Swarm hacia entornos locales mediante DinD permite reproducir un cluster multi-nodo en cualquier laptop sin dependencias externas — una capacidad valiosa cuando plataformas en la nube como Play with Docker dejan de estar disponibles.</li>
+    <li>Para una primera modernizacion en una empresa mediana, Docker Swarm ofrece la mejor relacion valor/complejidad. Una migracion futura a Kubernetes es factible si el negocio lo requiere, pero no es necesaria desde el dia uno.</li>
+</ol>
+
+<!-- ============== 9. REPRODUCIBILIDAD ============== -->
+<h2>9. Repositorio y reproducibilidad</h2>
+<p><strong>Codigo fuente:</strong> <a href="https://github.com/Danoviel/techretail-swarm">https://github.com/Danoviel/techretail-swarm</a></p>
+<p><strong>Reproducir el ejercicio en cualquier PC con Docker Desktop:</strong></p>
+<pre><code>git clone https://github.com/Danoviel/techretail-swarm
+cd techretail-swarm
+.\scripts\local-setup.ps1                    # levanta el cluster local
+docker exec -it node1 sh                     # entra al manager
+cd /techretail-swarm
+sh ./scripts/02-create-secret.sh             # crea el secret
+sh ./scripts/03-deploy.sh                    # despliega el stack
+sh ./scripts/04-scale-demo.sh                # demuestra el escalado</code></pre>
+
+<p><strong>Acceso desde el navegador del host:</strong></p>
+<ul>
+    <li>Frontend: <code>http://localhost</code></li>
+    <li>Visualizer: <code>http://localhost:8080</code></li>
+</ul>
+<p><strong>Limpieza completa:</strong> <code>.\scripts\local-cleanup.ps1</code></p>
+
+<!-- ============== 10. COMANDOS ============== -->
+<h2>10. Comandos utilizados (referencia)</h2>
+<pre><code># Inicializacion del cluster
+docker swarm init --advertise-addr &lt;IP&gt;
+docker swarm join-token worker
+
+# Gestion de Secrets
+echo "MiPasswordSegura123" | docker secret create db_password -
+docker secret ls
+
+# Despliegue del stack
+docker stack deploy -c docker-compose.yml techretail
+
+# Inspeccion del cluster
+docker node ls
+docker stack services techretail
+docker stack ps techretail
+docker service logs techretail_backend
+docker config ls
+docker secret ls
+
+# Escalado dinamico
+docker service scale techretail_frontend=5
+docker service scale techretail_backend=4
+
+# Limpieza
+docker stack rm techretail
+docker secret rm db_password
+docker swarm leave --force</code></pre>
+
+<div class="footer-note">
+    Informe generado el 5 de mayo de 2026 — David Carhuaz Vicaña<br>
+    Repositorio: github.com/Danoviel/techretail-swarm
+</div>
+
+</body>
+</html>
