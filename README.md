@@ -49,69 +49,61 @@ techretail-swarm/
 └── INFORME.md                  # Base del informe técnico (PDF)
 ```
 
-## Despliegue paso a paso (Play with Docker)
+## Despliegue paso a paso
 
-### 1. Crear el clúster
-1. Entrar a https://labs.play-with-docker.com/ (login con Docker Hub).
-2. Click en **+ ADD NEW INSTANCE** tres veces → tendrás `node1`, `node2`, `node3`.
-3. Cada nodo muestra su IP arriba del terminal (ej: `192.168.0.13`).
+> **Nota:** Play with Docker fue deprecated en marzo de 2026. Este proyecto se despliega ahora con **Docker Desktop local** usando contenedores Docker-in-Docker (DinD) que simulan los 3 nodos del clúster.
 
-### 2. Subir el proyecto al manager
-En `node1` (el manager):
+### 1. Levantar el clúster local (1 comando)
+Requisitos: Docker Desktop instalado y corriendo (icono ballena verde en bandeja).
 
+```powershell
+# Desde la raíz del proyecto, en PowerShell
+.\scripts\local-setup.ps1
+```
+
+El script automáticamente:
+- Crea una red `swarm-net` para los nodos
+- Levanta 3 contenedores DinD (`node1` manager + `node2`/`node3` workers)
+- Inicializa Swarm e une los workers
+- Clona el repo dentro de `node1`
+- Mapea los puertos `:80` y `:8080` del manager a tu máquina
+
+### 2. Entrar al manager y desplegar
+```powershell
+docker exec -it node1 sh
+```
+
+Una vez dentro de node1:
 ```bash
-git clone https://github.com/<TU_USUARIO>/techretail-swarm.git
-cd techretail-swarm
+cd /techretail-swarm
 chmod +x scripts/*.sh
+./scripts/02-create-secret.sh        # crea el secret de la BD
+./scripts/03-deploy.sh               # despliega el stack
 ```
 
-### 3. Inicializar Swarm
-**En `node1`:**
+### 3. Verificar
 ```bash
-./scripts/01-init-swarm.sh
-```
-Copia el comando `docker swarm join --token SWMTKN-...` que imprime.
-
-**En `node2` y `node3`:** pega ese comando.
-
-**Verifica desde `node1`:**
-```bash
-docker node ls
-```
-Debe listar 3 nodos: 1 con `MANAGER STATUS = Leader`, 2 sin.
-
-### 4. Crear el secret
-```bash
-./scripts/02-create-secret.sh
-# o personalizado:
-./scripts/02-create-secret.sh "MiPasswordSuperSegura"
-```
-
-### 5. Desplegar el stack
-```bash
-./scripts/03-deploy.sh
-```
-
-### 6. Verificar
-- **Frontend:** click en el botón `80` arriba del terminal de `node1` → abre la SPA demo.
-- **Visualizer:** click en el botón `8080` → ves los containers distribuidos en los 3 nodos.
-
-```bash
-docker stack services techretail   # 5 servicios, todos con réplicas en estado RUNNING
+docker stack services techretail   # 5 servicios, todos RUNNING
 docker stack ps techretail         # En qué nodo está cada réplica
-docker service logs techretail_backend   # Logs del backend
+docker service logs techretail_backend
 ```
 
-### 7. Demo de escalado
+### 4. Acceder desde el navegador (en tu Windows)
+- **Frontend:** http://localhost
+- **Visualizer:** http://localhost:8080
+
+### 5. Demo de escalado
 ```bash
+# Aún dentro de node1
 ./scripts/04-scale-demo.sh
 # Escala frontend 3→5 y backend 2→4
 ```
-Refrescar el visualizer para ver las nuevas réplicas distribuyéndose.
+Refrescar el visualizer para ver las nuevas réplicas distribuyéndose entre los 3 nodos.
 
-### 8. Limpieza (opcional)
-```bash
-./scripts/99-cleanup.sh
+### 6. Limpieza completa
+```powershell
+# Desde tu PowerShell (afuera de node1)
+.\scripts\local-cleanup.ps1
 ```
 
 ## Uso de Secrets y Configs
