@@ -5,7 +5,7 @@
 **Docente:** Jaime Farfan
 **Integrantes:**
 - David Carhuaz Vicaña
-- Wilsoez
+- Wilson Lopez
 
 **Carrera:** Diseño y Desarrollo de Software
 **Fecha:** 5 de mayo de 2026
