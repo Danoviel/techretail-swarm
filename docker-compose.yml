@@ -70,6 +70,11 @@ services:
       REDIS_HOST: cache
     deploy:
       replicas: 2
+      # endpoint_mode: dnsrr -> cada query DNS al nombre "backend"
+      # devuelve la IP de UNA replica distinta (round-robin a nivel DNS).
+      # Sin esto, Swarm usa VIP (1 IP virtual) y nginx puede quedar
+      # "stuck" en una replica por la conexion TCP keep-alive.
+      endpoint_mode: dnsrr
       restart_policy:
         condition: on-failure
         delay: 5s
